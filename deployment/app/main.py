@@ -28,10 +28,14 @@ async def lifespan(app: FastAPI):
     try:
         # Get GitHub repo info from environment or use defaults
         github_repo = os.getenv("GITHUB_REPO", "tu-usuario/tu-repo")
-        
-        # Download latest release from GitHub
+        model_version = os.getenv("MODEL_VERSION", "latest")
+
+        # Download release from GitHub. latest is the default, but you can specify a tag if needed
         logger.info(f"Fetching latest release from {github_repo}...")
-        response = requests.get(f"https://api.github.com/repos/{github_repo}/releases/latest")
+        if model_version != "latest":
+            response = requests.get(f"https://api.github.com/repos/{github_repo}/releases/tags/{model_version}")
+        else:
+            response = requests.get(f"https://api.github.com/repos/{github_repo}/releases/latest")
         response.raise_for_status()
         release = response.json()
         

@@ -2,6 +2,18 @@ name: Deploy Model
 
 on:
   workflow_dispatch:
+    inputs:
+      api_version:
+        description: 'Version of the API to deploy'
+        required: true
+        default: 'latest'
+      model_release:
+        description: 'Version of the model to deploy'
+        required: true
+        default: 'latest'
+
+permissions:
+  contents: write
 
 jobs:
   deploy:
@@ -9,9 +21,17 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
-
+      
       - name: Deploy to Render
-        run: |
-          curl -X POST ${{ secrets.RENDER_DEPLOY_HOOK }}
         env:
+          MODEL_RELEASE: ${{ inputs.model_release }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          latest=$(git tag | sort -r | head -n1)
+          if [[ "${{ inputs.api_version }}" != "latest" ]]; then
+            git checkout ${{ inputs.api_version }}
+          else
+            git checkout $latest
+          fi
+          #echo "se estaría haciendo el curl con el modelo ${MODEL_RELEASE} y ls version ${GITHUB_REF}"
+          curl -X POST ${{ secrets.RENDER_DEPLOY_HOOK }}
